@@ -8,7 +8,7 @@ export function initRobot({ scene, addUpdater, isMobile }) {
   const gsap = window.gsap;
 
   const robotGroup = new THREE.Group();
-  robotGroup.position.y = -6;
+  robotGroup.position.y = 0.8;
   robotGroup.rotation.z = Math.PI;
   if (isMobile) robotGroup.scale.setScalar(0.6);
   scene.add(robotGroup);
@@ -216,23 +216,7 @@ export function initRobot({ scene, addUpdater, isMobile }) {
     ringMeshes.push(eyeLight);
   }
 
-  const ringGroup = new THREE.Group();
-  if (!isMobile) {
-    for (let i = 0; i < 3; i += 1) {
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(1.35 + i * 0.26, 0.014, 16, 120),
-        new THREE.MeshBasicMaterial({
-          color: "#00f5ff",
-          transparent: true,
-          opacity: 0.4 - i * 0.08,
-        })
-      );
-      ring.rotation.x = i * 0.75;
-      ring.rotation.y = i * 0.55;
-      ringGroup.add(ring);
-    }
-    robotGroup.add(ringGroup);
-  }
+
 
   const particleCount = isMobile ? 500 : 2000;
   const particlePositions = new Float32Array(particleCount * 3);
@@ -285,12 +269,6 @@ export function initRobot({ scene, addUpdater, isMobile }) {
   }
 
   function entryAnimation() {
-    gsap.to(robotGroup.position, {
-      y: 0,
-      duration: 1.8,
-      ease: "power3.out",
-      delay: 0.5,
-    });
     gsap.to(robotGroup.rotation, {
       z: 0,
       duration: 1.8,
@@ -300,16 +278,14 @@ export function initRobot({ scene, addUpdater, isMobile }) {
   }
 
   function exitToSection4() {
-    gsap.to(robotGroup.position, { y: 8, duration: 1, ease: "power2.inOut" });
+    gsap.to(robotGroup.position, { y: 5.2, duration: 1, ease: "power2.inOut" });
     gsap.to(robotGroup.scale, { x: 0.7, y: 0.7, z: 0.7, duration: 1, ease: "power2.inOut" });
-    gsap.to(ringGroup.children.map((r) => r.material), { opacity: 0, duration: 0.7, ease: "power2.out" });
     gsap.to(headMat, { opacity: 0.4, duration: 1, ease: "power2.out" });
   }
 
   function returnFromSection4() {
-    gsap.to(robotGroup.position, { y: 0, duration: 1, ease: "power2.inOut" });
+    gsap.to(robotGroup.position, { y: 0.8, duration: 1, ease: "power2.inOut" });
     gsap.to(robotGroup.scale, { x: isMobile ? 0.6 : 1, y: isMobile ? 0.6 : 1, z: isMobile ? 0.6 : 1, duration: 1, ease: "power2.inOut" });
-    gsap.to(ringGroup.children.map((r) => r.material), { opacity: 0.4, duration: 0.7, ease: "power2.out" });
   }
 
   function setMode(mode) {
@@ -344,11 +320,7 @@ export function initRobot({ scene, addUpdater, isMobile }) {
     jawLineL.material.emissiveIntensity = 0.8 + Math.sin(elapsed * 1.7) * 0.35;
     jawLineR.material.emissiveIntensity = 0.8 + Math.sin(elapsed * 1.7 + 0.5) * 0.35;
 
-    if (!isMobile) {
-      ringGroup.rotation.x += 0.004;
-      ringGroup.rotation.y += 0.003;
-      ringGroup.rotation.z += 0.002;
-    }
+
 
     const p = particleGeometry.attributes.position.array;
     for (let i = 0; i < particleCount; i += 1) {

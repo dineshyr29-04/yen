@@ -53,20 +53,20 @@ export async function runLoaderSequence({ onRevealMain }) {
     opacity: 1,
   });
 
-  const base = new THREE.Mesh(new RoundedBoxGeometry(2.45, 0.115, 1.62, 6, 0.065), shellMat);
-  base.position.y = -0.57;
+  const base = new THREE.Mesh(new RoundedBoxGeometry(3.2, 0.128, 2.15, 6, 0.078), shellMat);
+  base.position.y = -0.62;
   laptop.add(base);
 
-  const palmInset = new THREE.Mesh(new RoundedBoxGeometry(2.24, 0.026, 1.4, 4, 0.03), trimMat);
-  palmInset.position.set(0, -0.5, 0.01);
+  const palmInset = new THREE.Mesh(new RoundedBoxGeometry(2.96, 0.032, 1.88, 4, 0.038), trimMat);
+  palmInset.position.set(0, -0.54, 0.012);
   laptop.add(palmInset);
 
   const hinge = new THREE.Group();
-  hinge.position.set(0, -0.51, -0.78);
+  hinge.position.set(0, -0.56, -1.02);
   laptop.add(hinge);
 
-  const lid = new THREE.Mesh(new RoundedBoxGeometry(2.45, 1.45, 0.072, 6, 0.06), shellMat);
-  lid.position.set(0, 0.72, 0.036);
+  const lid = new THREE.Mesh(new RoundedBoxGeometry(3.2, 1.92, 0.084, 6, 0.072), shellMat);
+  lid.position.set(0, 0.96, 0.042);
   hinge.add(lid);
 
   const txCanvas = document.createElement("canvas");
@@ -118,10 +118,10 @@ export async function runLoaderSequence({ onRevealMain }) {
   drawScreen();
 
   const screen = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.21, 1.24),
+    new THREE.PlaneGeometry(2.96, 1.68),
     new THREE.MeshBasicMaterial({ map: screenTexture, transparent: true })
   );
-  screen.position.set(0, 0.72, 0.076);
+  screen.position.set(0, 0.96, 0.088);
   hinge.add(screen);
 
   let running = true;
