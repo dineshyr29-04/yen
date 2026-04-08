@@ -58,7 +58,7 @@ h3,
 .webgl-layer {
   position: fixed;
   inset: 0;
-  z-index: 18;
+  z-index: 0;
   pointer-events: none;
 }
 
@@ -70,7 +70,7 @@ h3,
 .hud-corners {
   position: fixed;
   inset: 22px;
-  z-index: 12;
+  z-index: 10;
   pointer-events: none;
 }
 
@@ -112,7 +112,7 @@ h3,
 
 main {
   position: relative;
-  z-index: 8;
+  z-index: 20;
 }
 
 .rotation-track {
