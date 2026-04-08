@@ -58,10 +58,17 @@ rgbeLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/exampl
 });
 
 // Circular Dotted Background Mesh
-const circleGeometry = new THREE.TorusGeometry(3.5, 0.01, 16, 100);
-const circleMaterial = new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.2 });
+const circleGeometry = new THREE.TorusGeometry(4.5, 0.008, 16, 100);
+const circleMaterial = new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.1 });
 const circleMesh = new THREE.Mesh(circleGeometry, circleMaterial);
 scene.add(circleMesh);
+
+// Digital Cyber Mesh (Floor Grid)
+const gridHelper = new THREE.GridHelper(40, 40, 0x06b6d4, 0x06b6d4);
+gridHelper.position.y = -3;
+gridHelper.material.transparent = true;
+gridHelper.material.opacity = 0.15;
+scene.add(gridHelper);
 
 // Add dots to circle for technical feel
 const dotsGeometry = new THREE.BufferGeometry();
@@ -86,19 +93,21 @@ const modelUrl = 'https://raw.githubusercontent.com/mrdoob/three.js/master/examp
 loader.load(modelUrl, (gltf) => {
     model = gltf.scene;
     
-    // Apply "Premium Black Cybernetic" Material
+    // Apply "Premium Black Cybernetic" Material and store references
+    const modelMaterials = [];
     model.traverse((child) => {
         if (child.isMesh) {
             child.material = new THREE.MeshPhysicalMaterial({
-                color: 0x0a0a0a, // Deep black
+                color: 0x010101, // Deepest black
                 metalness: 1.0,
-                roughness: 0.15,
+                roughness: 0.2, // slightly rougher to catch rim lights smoothly
                 clearcoat: 1.0,
-                clearcoatRoughness: 0.1,
-                envMapIntensity: 2.5, // High reflection
+                clearcoatRoughness: 0.05,
+                envMapIntensity: 2.5,
                 transparent: true,
                 opacity: 1
             });
+            modelMaterials.push(child.material);
         }
     });
 
@@ -132,16 +141,18 @@ loader.load(modelUrl, (gltf) => {
           .to('.hero-stats', { opacity: 1, y: 0, duration: 1, ease: "power4.out" }, "-=0.8")
           .to('.cta-group', { opacity: 1, y: 0, duration: 1, ease: "power4.out" }, "-=0.8");
 
-    // Immersive Cinematic Scroll Transition (Recede into fog & scale down)
+    // Immersive Cinematic Scroll Transition
+    // 1. Position & Scale (Recede into fog)
     gsap.to(model.position, {
         scrollTrigger: {
             trigger: "#home",
             start: "top top",
             end: "bottom top",
-            scrub: 1,
+            scrub: true,
         },
-        z: -15, // Move deep into fog
-        y: 2,   // Float slightly up
+        z: -12,
+        y: 1.5,
+        ease: "power2.inOut"
     });
 
     gsap.to(model.scale, {
@@ -149,9 +160,22 @@ loader.load(modelUrl, (gltf) => {
             trigger: "#home",
             start: "top top",
             end: "bottom top",
-            scrub: 1,
+            scrub: true,
         },
-        x: 0.8, y: 0.8, z: 0.8
+        x: 0.7, y: 0.7, z: 0.7,
+        ease: "power2.inOut"
+    });
+
+    // 2. Explicit Opacity Fade (Simulating depth blur/fade)
+    gsap.to(modelMaterials, {
+        scrollTrigger: {
+            trigger: "#home",
+            start: "center top", // Start fading halfway down hero
+            end: "bottom top",
+            scrub: true,
+        },
+        opacity: 0,
+        ease: "power2.inOut"
     });
 
     gsap.to(model.rotation, {
@@ -209,24 +233,37 @@ const particlesMaterial = new THREE.PointsMaterial({
 const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
 scene.add(particlesMesh);
 
-// Section Reveal Animations
+// Section Reveal & Parallax Animations
 document.addEventListener("DOMContentLoaded", () => {
+    // Parallax Foreground
+    gsap.to('.hero-content', {
+        scrollTrigger: {
+            trigger: "#home",
+            start: "top top",
+            end: "bottom top",
+            scrub: true
+        },
+        y: -150, // Move up faster than background
+        opacity: 0,
+        ease: "power2.inOut"
+    });
+
+    // Elegant Section Entrances
     gsap.utils.toArray('section').forEach((section, i) => {
-        if(section.id === "home") return; // Skip Hero
+        if(section.id === "home") return;
         
-        // Wrap children in a gsap target
         const elementsToAnimate = section.querySelector('.container').children;
         
         gsap.from(elementsToAnimate, {
             scrollTrigger: {
                 trigger: section,
-                start: "top 85%", // Trigger when 85% from top
+                start: "top 80%", // slightly earlier
             },
-            y: 40,
+            y: 60, // Elegant slide up
             opacity: 0,
-            duration: 1,
-            stagger: 0.15,
-            ease: "power3.out"
+            duration: 1.2,
+            stagger: 0.1,
+            ease: "power2.out"
         });
     });
 });
@@ -261,6 +298,9 @@ function animate() {
         model.rotation.y += mouseX * 0.05;
         model.rotation.x += mouseY * 0.05;
     }
+
+    // Digital Mesh (Grid) motion
+    gridHelper.position.z = (time * 2) % 1; // Infinite scrolling grid effect
 
     // Digital Rain motion
     const positions = particlesMesh.geometry.attributes.position.array;
