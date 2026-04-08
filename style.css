@@ -75,7 +75,7 @@ canvas {
 .glass-card:hover {
   border-color: var(--primary-color);
   box-shadow: var(--neon-glow-cyan);
-  transform: translateY(-5px);
+  transform: translateY(-5px) scale(1.02);
 }
 
 /* Layout */
@@ -274,9 +274,8 @@ section {
 }
 
 .sponsor-logo:hover {
-  filter: grayscale(0) opacity(1);
+  filter: grayscale(0) opacity(1) drop-shadow(0 0 20px var(--primary-color));
   transform: scale(1.1);
-  drop-shadow: 0 0 20px var(--primary-color);
 }
 
 /* Loading Screen */

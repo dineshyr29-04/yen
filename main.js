@@ -31,6 +31,9 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.5;
 document.body.appendChild(renderer.domElement);
 
+// Add Depth Fog for cinematic fade-out
+scene.fog = new THREE.FogExp2(0x0a0a0a, 0.08);
+
 // Lighting
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
 scene.add(ambientLight);
@@ -92,7 +95,9 @@ loader.load(modelUrl, (gltf) => {
                 roughness: 0.15,
                 clearcoat: 1.0,
                 clearcoatRoughness: 0.1,
-                envMapIntensity: 2.5 // High reflection
+                envMapIntensity: 2.5, // High reflection
+                transparent: true,
+                opacity: 1
             });
         }
     });
@@ -127,15 +132,26 @@ loader.load(modelUrl, (gltf) => {
           .to('.hero-stats', { opacity: 1, y: 0, duration: 1, ease: "power4.out" }, "-=0.8")
           .to('.cta-group', { opacity: 1, y: 0, duration: 1, ease: "power4.out" }, "-=0.8");
 
-    // Immersive Scroll Transition (Zoom through Robot)
+    // Immersive Cinematic Scroll Transition (Recede into fog & scale down)
+    gsap.to(model.position, {
+        scrollTrigger: {
+            trigger: "#home",
+            start: "top top",
+            end: "bottom top",
+            scrub: 1,
+        },
+        z: -15, // Move deep into fog
+        y: 2,   // Float slightly up
+    });
+
     gsap.to(model.scale, {
         scrollTrigger: {
             trigger: "#home",
             start: "top top",
-            end: "bottom center",
+            end: "bottom top",
             scrub: 1,
         },
-        x: 10, y: 10, z: 10
+        x: 0.8, y: 0.8, z: 0.8
     });
 
     gsap.to(model.rotation, {
@@ -171,25 +187,50 @@ loader.load(modelUrl, (gltf) => {
 
 camera.position.z = 6;
 
-// Particles
+// Cyber-Tech Particles (Digital Rain/Mesh)
 const particlesGeometry = new THREE.BufferGeometry();
 const particlesCount = 4000;
 const posArray = new Float32Array(particlesCount * 3);
 
-for(let i=0; i < particlesCount * 3; i++) {
-    posArray[i] = (Math.random() - 0.5) * 20;
+for(let i=0; i < particlesCount; i++) {
+    posArray[i*3] = (Math.random() - 0.5) * 20;     // x
+    posArray[i*3+1] = Math.random() * 20 - 10;      // y
+    posArray[i*3+2] = (Math.random() - 0.5) * 20;   // z
 }
 
 particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
 const particlesMaterial = new THREE.PointsMaterial({
-    size: 0.01,
+    size: 0.02,
     color: 0x06b6d4,
     transparent: true,
-    opacity: 0.6
+    opacity: 0.4
 });
 
 const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
 scene.add(particlesMesh);
+
+// Section Reveal Animations
+document.addEventListener("DOMContentLoaded", () => {
+    gsap.utils.toArray('section').forEach((section, i) => {
+        if(section.id === "home") return; // Skip Hero
+        
+        // Wrap children in a gsap target
+        const elementsToAnimate = section.querySelector('.container').children;
+        
+        gsap.from(elementsToAnimate, {
+            scrollTrigger: {
+                trigger: section,
+                start: "top 85%", // Trigger when 85% from top
+            },
+            y: 40,
+            opacity: 0,
+            duration: 1,
+            stagger: 0.15,
+            ease: "power3.out"
+        });
+    });
+});
+
 
 // Mouse Interaction
 let mouseX = 0;
@@ -221,8 +262,18 @@ function animate() {
         model.rotation.x += mouseY * 0.05;
     }
 
-    particlesMesh.rotation.y = time * 0.02;
-    particlesMesh.position.z = Math.sin(time * 0.1) * 2;
+    // Digital Rain motion
+    const positions = particlesMesh.geometry.attributes.position.array;
+    for (let i = 1; i < particlesCount * 3; i += 3) {
+        positions[i] -= 0.03; // Fall down
+        if (positions[i] < -10) {
+            positions[i] = 10; // Reset to top
+        }
+    }
+    particlesMesh.geometry.attributes.position.needsUpdate = true;
+    
+    // Slower rotation for depth feeling
+    particlesMesh.rotation.y = time * 0.01;
     
     circleMesh.rotation.z = time * 0.1;
     dotsMesh.rotation.z = time * 0.12;
