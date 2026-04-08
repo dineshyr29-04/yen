@@ -7,324 +7,301 @@ import Lenis from '@studio-freight/lenis';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Initialize Lenis Smooth Scroll
-const lenis = new Lenis({
-    lerp: 0.1,
-    wheelMultiplier: 1,
-    smoothWheel: true,
-});
-
-function raf(time) {
-    lenis.raf(time);
-    requestAnimationFrame(raf);
-}
+// Initialize Smooth Scroll
+const lenis = new Lenis({ lerp: 0.08, smoothWheel: true });
+function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
 requestAnimationFrame(raf);
 
-// Three.js Scene Setup
+// ==========================================
+// SCENE SETUP (JARVIS HUD)
+// ==========================================
+const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+scene.fog = new THREE.FogExp2(0x030303, 0.04); // Dark HUD fog
 
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 8; // Starting distance
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.5;
-document.body.appendChild(renderer.domElement);
-
-// Add Depth Fog for cinematic fade-out
-scene.fog = new THREE.FogExp2(0x0a0a0a, 0.08);
+renderer.toneMappingExposure = 1.2;
+container.appendChild(renderer.domElement);
 
 // Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
 scene.add(ambientLight);
+const cyanSpot = new THREE.PointLight(0x06b6d4, 50, 20); // Bright cyan
+cyanSpot.position.set(4, 4, 4);
+scene.add(cyanSpot);
+const purpleSpot = new THREE.PointLight(0x7c3aed, 30, 20); // Neon purple
+purpleSpot.position.set(-4, -4, 4);
+scene.add(purpleSpot);
+const topRim = new THREE.DirectionalLight(0xffffff, 1.5);
+topRim.position.set(0, 5, -5);
+scene.add(topRim);
 
-const cyanLight = new THREE.PointLight(0x06b6d4, 30, 20); // Cyan Blue
-cyanLight.position.set(5, 5, 5);
-scene.add(cyanLight);
-
-const purpleLight = new THREE.PointLight(0x7c3aed, 20, 20); // Neon Purple
-purpleLight.position.set(-5, -2, 5);
-scene.add(purpleLight);
-
-const rimLight = new THREE.DirectionalLight(0xffffff, 2);
-rimLight.position.set(0, 5, -5);
-scene.add(rimLight);
-
-// Environment Map for Realism
-const rgbeLoader = new RGBELoader();
-rgbeLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/equirectangular/venice_sunset_1k.hdr', (texture) => {
+// HDR Environment for metal reflections
+new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/equirectangular/royal_esplanade_1k.hdr', (texture) => {
     texture.mapping = THREE.EquirectangularReflectionMapping;
     scene.environment = texture;
 });
 
-// Circular Dotted Background Mesh
-const circleGeometry = new THREE.TorusGeometry(4.5, 0.008, 16, 100);
-const circleMaterial = new THREE.MeshBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.1 });
-const circleMesh = new THREE.Mesh(circleGeometry, circleMaterial);
-scene.add(circleMesh);
-
-// Digital Cyber Mesh (Floor Grid)
-const gridHelper = new THREE.GridHelper(40, 40, 0x06b6d4, 0x06b6d4);
-gridHelper.position.y = -3;
+// ==========================================
+// BACKGROUND (HOLOGRAPHIC GRID + RAIN)
+// ==========================================
+const gridGroup = new THREE.Group();
+const gridHelper = new THREE.GridHelper(60, 60, 0x06b6d4, 0x06b6d4);
 gridHelper.material.transparent = true;
-gridHelper.material.opacity = 0.15;
-scene.add(gridHelper);
+gridHelper.material.opacity = 0.05;
+gridGroup.add(gridHelper);
 
-// Add dots to circle for technical feel
-const dotsGeometry = new THREE.BufferGeometry();
-const dotsCount = 60;
-const dotPositions = new Float32Array(dotsCount * 3);
-for(let i=0; i < dotsCount; i++) {
-    const angle = (i / dotsCount) * Math.PI * 2;
-    dotPositions[i*3] = Math.cos(angle) * 3.5;
-    dotPositions[i*3+1] = Math.sin(angle) * 3.5;
-    dotPositions[i*3+2] = 0;
-}
-dotsGeometry.setAttribute('position', new THREE.BufferAttribute(dotPositions, 3));
-const dotsMaterial = new THREE.PointsMaterial({ size: 0.05, color: 0x06b6d4 });
-const dotsMesh = new THREE.Points(dotsGeometry, dotsMaterial);
-scene.add(dotsMesh);
+const circularGrid = new THREE.PolarGridHelper(10, 16, 8, 64, 0x06b6d4, 0x06b6d4);
+circularGrid.material.transparent = true;
+circularGrid.material.opacity = 0.1;
+circularGrid.rotation.x = Math.PI / 2; // Face camera initially
+gridGroup.add(circularGrid);
 
-// Load Model
-let model;
-const loader = new GLTFLoader();
-const modelUrl = 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf';
+gridGroup.position.set(0, -3, -5); // Below and behind
+gridGroup.rotation.x = Math.PI / 4; // Tilt floor
+scene.add(gridGroup);
 
-loader.load(modelUrl, (gltf) => {
-    model = gltf.scene;
-    
-    // Apply "Premium Black Cybernetic" Material and store references
-    const modelMaterials = [];
-    model.traverse((child) => {
-        if (child.isMesh) {
-            child.material = new THREE.MeshPhysicalMaterial({
-                color: 0x010101, // Deepest black
-                metalness: 1.0,
-                roughness: 0.2, // slightly rougher to catch rim lights smoothly
-                clearcoat: 1.0,
-                clearcoatRoughness: 0.05,
-                envMapIntensity: 2.5,
-                transparent: true,
-                opacity: 1
-            });
-            modelMaterials.push(child.material);
-        }
-    });
-
-    // Position it to emphasize the face profile
-    model.rotation.y = Math.PI * 1.35; 
-    model.position.y = -0.3;
-    model.scale.set(0, 0, 0);
-    scene.add(model);
-
-    // Initial Appearance Animation
-    gsap.to(model.scale, {
-        x: 2.2, y: 2.2, z: 2.2,
-        duration: 2.5,
-        ease: "expo.out",
-        delay: 0.5
-    });
-
-    // Remove Loader
-    const loaderElem = document.getElementById('loader');
-    gsap.to(loaderElem, {
-        opacity: 0,
-        duration: 1,
-        delay: 2,
-        onComplete: () => loaderElem.remove()
-    });
-
-    // Animate Hero Content
-    const heroTl = gsap.timeline({ delay: 2.2 });
-    heroTl.to('.hero h1', { opacity: 1, y: 0, duration: 1.2, ease: "power4.out" })
-          .to('.hero .tagline', { opacity: 1, y: 0, duration: 1, ease: "power4.out" }, "-=0.8")
-          .to('.hero-stats', { opacity: 1, y: 0, duration: 1, ease: "power4.out" }, "-=0.8")
-          .to('.cta-group', { opacity: 1, y: 0, duration: 1, ease: "power4.out" }, "-=0.8");
-
-    // Immersive Cinematic Scroll Transition
-    // 1. Position & Scale (Recede into fog)
-    gsap.to(model.position, {
-        scrollTrigger: {
-            trigger: "#home",
-            start: "top top",
-            end: "bottom top",
-            scrub: true,
-        },
-        z: -12,
-        y: 1.5,
-        ease: "power2.inOut"
-    });
-
-    gsap.to(model.scale, {
-        scrollTrigger: {
-            trigger: "#home",
-            start: "top top",
-            end: "bottom top",
-            scrub: true,
-        },
-        x: 0.7, y: 0.7, z: 0.7,
-        ease: "power2.inOut"
-    });
-
-    // 2. Explicit Opacity Fade (Simulating depth blur/fade)
-    gsap.to(modelMaterials, {
-        scrollTrigger: {
-            trigger: "#home",
-            start: "center top", // Start fading halfway down hero
-            end: "bottom top",
-            scrub: true,
-        },
-        opacity: 0,
-        ease: "power2.inOut"
-    });
-
-    gsap.to(model.rotation, {
-        scrollTrigger: {
-            trigger: "#home",
-            start: "top top",
-            end: "bottom center",
-            scrub: 1,
-        },
-        y: Math.PI * 1.35 - (Math.PI / 2) // Rotate face away slightly
-    });
-    
-    gsap.to(circleMesh.scale, {
-        scrollTrigger: {
-            trigger: "#home",
-            start: "top top",
-            end: "bottom center",
-            scrub: 1,
-        },
-        x: 2, y: 2, z: 2
-    });
-    
-    gsap.to([circleMesh.material, dotsMaterial], {
-        scrollTrigger: {
-            trigger: "#home",
-            start: "top top",
-            end: "bottom center",
-            scrub: 1,
-        },
-        opacity: 0
-    });
-});
-
-camera.position.z = 6;
-
-// Cyber-Tech Particles (Digital Rain/Mesh)
-const particlesGeometry = new THREE.BufferGeometry();
-const particlesCount = 4000;
-const posArray = new Float32Array(particlesCount * 3);
-
+const particlesGeo = new THREE.BufferGeometry();
+const particlesCount = 800;
+const posArr = new Float32Array(particlesCount * 3);
 for(let i=0; i < particlesCount; i++) {
-    posArray[i*3] = (Math.random() - 0.5) * 20;     // x
-    posArray[i*3+1] = Math.random() * 20 - 10;      // y
-    posArray[i*3+2] = (Math.random() - 0.5) * 20;   // z
+    posArr[i*3] = (Math.random() - 0.5) * 30; // x
+    posArr[i*3+1] = Math.random() * 30 - 15;  // y
+    posArr[i*3+2] = (Math.random() - 0.5) * 15 - 5; // z
 }
-
-particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-const particlesMaterial = new THREE.PointsMaterial({
-    size: 0.02,
-    color: 0x06b6d4,
-    transparent: true,
-    opacity: 0.4
-});
-
-const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+const particlesMat = new THREE.PointsMaterial({ size: 0.03, color: 0x7c3aed, transparent: true, opacity: 0.4 });
+const particlesMesh = new THREE.Points(particlesGeo, particlesMat);
 scene.add(particlesMesh);
 
-// Section Reveal & Parallax Animations
-document.addEventListener("DOMContentLoaded", () => {
-    // Parallax Foreground
-    gsap.to('.hero-content', {
-        scrollTrigger: {
-            trigger: "#home",
-            start: "top top",
-            end: "bottom top",
-            scrub: true
-        },
-        y: -150, // Move up faster than background
-        opacity: 0,
-        ease: "power2.inOut"
-    });
+// ==========================================
+// PORTAL INTRO SEQUENCE (THE LAPTOP)
+// ==========================================
+const introGroup = new THREE.Group();
 
-    // Elegant Section Entrances
-    gsap.utils.toArray('section').forEach((section, i) => {
-        if(section.id === "home") return;
-        
-        const elementsToAnimate = section.querySelector('.container').children;
-        
-        gsap.from(elementsToAnimate, {
-            scrollTrigger: {
-                trigger: section,
-                start: "top 80%", // slightly earlier
-            },
-            y: 60, // Elegant slide up
-            opacity: 0,
-            duration: 1.2,
-            stagger: 0.1,
-            ease: "power2.out"
-        });
-    });
-});
+// Canvas for glowing "loop" screen
+const canvas = document.createElement('canvas');
+canvas.width = 1024; canvas.height = 512;
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, 1024, 512);
+ctx.fillStyle = '#06b6d4'; // Cyan neon
+ctx.font = 'bold 150px "JetBrains Mono", monospace';
+ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+// Engraved look with shadow
+ctx.shadowColor = '#06b6d4'; ctx.shadowBlur = 40;
+ctx.fillText('l o o p', 512, 256);
+const screenTexture = new THREE.CanvasTexture(canvas);
 
+// Laptop Geometry
+const laptopMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, metalness: 0.9, roughness: 0.2 });
+const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(4, 0.1, 3), laptopMat);
+const hinge = new THREE.Group();
+hinge.position.set(0, 0.05, -1.5); // Back pivot
 
-// Mouse Interaction
-let mouseX = 0;
-let mouseY = 0;
+const lidBase = new THREE.Mesh(new THREE.BoxGeometry(4, 3, 0.1), laptopMat);
+lidBase.position.set(0, 1.5, 0.05); // Pivot compensation
+const screenMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.8, 2.8),
+    new THREE.MeshBasicMaterial({ map: screenTexture, transparent: true })
+);
+screenMesh.position.set(0, 1.5, 0.11); // Slightly in front of lid
 
-window.addEventListener('mousemove', (e) => {
-    mouseX = (e.clientX / window.innerWidth) - 0.5;
-    mouseY = (e.clientY / window.innerHeight) - 0.5;
+hinge.add(lidBase); hinge.add(screenMesh);
+introGroup.add(baseMesh); introGroup.add(hinge);
 
-    // Cursor Glow follow
-    const cursor = document.getElementById('cursor-glow');
-    if(cursor) {
-        gsap.to(cursor, {
-            x: e.clientX,
-            y: e.clientY,
-            duration: 0.8,
-            ease: "power2.out"
-        });
-    }
-});
+// Initial pose: Standing closed on its side
+introGroup.rotation.x = -Math.PI / 2;
+introGroup.rotation.y = -Math.PI / 4;
+introGroup.position.set(0, -1, 0);
+scene.add(introGroup);
 
-// Animation Loop
-function animate() {
-    const time = performance.now() * 0.001;
+// UI Pre-intro state
+gsap.set('.hud-frame, #app', { opacity: 0, pointerEvents: 'none' });
 
-    if (model) {
-        model.position.y = Math.sin(time * 0.5) * 0.1;
-        model.rotation.y += mouseX * 0.05;
-        model.rotation.x += mouseY * 0.05;
-    }
+let mainModelReady = false;
+let introComplete = false;
 
-    // Digital Mesh (Grid) motion
-    gridHelper.position.z = (time * 2) % 1; // Infinite scrolling grid effect
-
-    // Digital Rain motion
-    const positions = particlesMesh.geometry.attributes.position.array;
-    for (let i = 1; i < particlesCount * 3; i += 3) {
-        positions[i] -= 0.03; // Fall down
-        if (positions[i] < -10) {
-            positions[i] = 10; // Reset to top
+// ==========================================
+// MAIN ROBOT HEAD (AI CORE)
+// ==========================================
+let aiCore;
+const loader = new GLTFLoader();
+loader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf', (gltf) => {
+    aiCore = gltf.scene;
+    
+    // JARVIS Black & Neon styling
+    aiCore.traverse((child) => {
+        if (child.isMesh) {
+            child.material = new THREE.MeshPhysicalMaterial({
+                color: 0x020202, // Abyss black
+                metalness: 1.0, 
+                roughness: 0.3,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.1,
+                envMapIntensity: 2.0,
+                emissive: 0x06b6d4, // Cyan glow
+                emissiveIntensity: 0.0// Will pulse later
+            });
+            // Override emission map if it exists to keep geometric details glowing cyan
+            if(child.material.emissiveMap) {
+               child.material.emissiveIntensity = 0.5;
+            }
         }
+    });
+
+    aiCore.scale.set(0, 0, 0); // Hide initially
+    aiCore.position.set(0, 0, 0);
+    scene.add(aiCore);
+    mainModelReady = true;
+
+    startIntroSequence();
+});
+
+// ==========================================
+// THE CINEMATIC SEQUENCE
+// ==========================================
+function startIntroSequence() {
+    const tl = gsap.timeline();
+
+    // 1. Laptop rotates to face user
+    tl.to(introGroup.rotation, {
+        x: 0, y: 0, z: 0,
+        duration: 2, ease: "power3.inOut"
+    }, 0.5);
+
+    // 2. Hinge opens, revealing 'loop'
+    tl.to(hinge.rotation, {
+        x: -Math.PI * 0.6, // Open angle
+        duration: 2, ease: "power2.out"
+    }, 2.0)
+    .to(ambientLight, { intensity: 1, duration: 2 }, 2.0); // Screen glares
+
+    // 3. Portal Dive: Camera moves FORWARD through second 'o' 
+    // Approx position of second 'o' on screen local space is mapping to x>0
+    tl.to(camera.position, {
+        z: -1.4, // Push completely through screen
+        y: 1.5,
+        x: 0.4, // Target the right side 'o'
+        duration: 2.5, ease: "power4.in"
+    }, 3.5)
+    
+    // 4. Scene Swaps inside the 'portal' blinding light
+    .add(() => {
+        scene.remove(introGroup); // Remove laptop
+        // Flash screen white/cyan
+        renderer.setClearColor(0x06b6d4, 1);
+        setTimeout(() => renderer.setClearColor(0x000000, 0), 100);
+        
+        // Reset camera for main scene
+        camera.position.set(0, 0, 8);
+        
+        // Appear AI Core
+        gsap.to(aiCore.scale, { x: 2, y: 2, z: 2, duration: 2, ease: "elastic.out(1, 0.7)" });
+        gsap.to('.hud-frame, #app', { opacity: 1, duration: 1, pointerEvents: 'auto' });
+        
+        introComplete = true;
+        initScrollTriggers();
+    }, 5.8);
+}
+
+// ==========================================
+// SCROLL ROTATION SYSTEM & HUD Transitions
+// ==========================================
+function initScrollTriggers() {
+    // Single continuous rotation tied to scroll body
+    // 4 sections * 100vh = full scroll journey. We want to end at Math.PI * 2
+    gsap.to(aiCore.rotation, {
+        scrollTrigger: {
+            trigger: "#app",
+            start: "top top",
+            end: "bottom bottom",
+            scrub: 1.5, // Smooth inertia scrub
+        },
+        y: Math.PI * 2, // Full 360 degree journey, stopping nicely at 90 deg intervals physically
+        ease: "none"
+    });
+
+    // Slight Y movement to follow text rhythm
+    gsap.to(aiCore.position, {
+        scrollTrigger: {
+            trigger: "#app",
+            start: "top top",
+            end: "bottom bottom",
+            scrub: true,
+        },
+        y: -1, 
+        ease: "sine.inOut"
+    });
+
+    // HUD Content Entrances
+    gsap.utils.toArray('.transition-el').forEach(el => {
+        gsap.fromTo(el, 
+            { opacity: 0, y: 40 },
+            { 
+               opacity: 1, y: 0, 
+               duration: 1, ease: "power2.out",
+               scrollTrigger: {
+                   trigger: el,
+                   start: "top 80%",
+                   toggleActions: "play none none reverse"
+               }
+            }
+        );
+    });
+}
+
+// ==========================================
+// RENDER LOOP & PARALLAX
+// ==========================================
+let mouseX = 0; let mouseY = 0;
+let targetCubeX = 0; let targetCubeY = 0;
+const windowHalfX = window.innerWidth / 2;
+const windowHalfY = window.innerHeight / 2;
+
+document.addEventListener('mousemove', (event) => {
+    mouseX = (event.clientX - windowHalfX);
+    mouseY = (event.clientY - windowHalfY);
+});
+
+const clock = new THREE.Clock();
+
+function animate() {
+    const time = clock.getElapsedTime();
+
+    if(introComplete && aiCore) {
+        // Subtle idle multi-axis floating
+        targetCubeX = mouseX * 0.001;
+        targetCubeY = mouseY * 0.001;
+        
+        // Gentle parallax lerp
+        aiCore.position.x += (targetCubeX - aiCore.position.x) * 0.05;
+        aiCore.rotation.x += (targetCubeY - aiCore.rotation.x) * 0.05;
+        aiCore.position.y += Math.sin(time) * 0.002; // breathing
     }
-    particlesMesh.geometry.attributes.position.needsUpdate = true;
-    
-    // Slower rotation for depth feeling
-    particlesMesh.rotation.y = time * 0.01;
-    
-    circleMesh.rotation.z = time * 0.1;
-    dotsMesh.rotation.z = time * 0.12;
+
+    if(introComplete) {
+        // Animate Grid and Rain slowly
+        circularGrid.rotation.z = time * 0.05;
+        
+        const positions = particlesMesh.geometry.attributes.position.array;
+        for(let i = 1; i < particlesCount * 3; i += 3) {
+            positions[i] -= 0.02; // slow rain
+            if(positions[i] < -15) positions[i] = 15;
+        }
+        particlesMesh.geometry.attributes.position.needsUpdate = true;
+    }
 
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
 }
-
 animate();
 
-// Resize handling
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
