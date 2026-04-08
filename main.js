@@ -83,8 +83,23 @@ const modelUrl = 'https://raw.githubusercontent.com/mrdoob/three.js/master/examp
 loader.load(modelUrl, (gltf) => {
     model = gltf.scene;
     
-    // Position it slightly profile as in the sample
-    model.rotation.y = Math.PI * 1.25; 
+    // Apply "Premium Black Cybernetic" Material
+    model.traverse((child) => {
+        if (child.isMesh) {
+            child.material = new THREE.MeshPhysicalMaterial({
+                color: 0x0a0a0a, // Deep black
+                metalness: 1.0,
+                roughness: 0.15,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.1,
+                envMapIntensity: 2.5 // High reflection
+            });
+        }
+    });
+
+    // Position it to emphasize the face profile
+    model.rotation.y = Math.PI * 1.35; 
+    model.position.y = -0.3;
     model.scale.set(0, 0, 0);
     scene.add(model);
 
@@ -112,7 +127,7 @@ loader.load(modelUrl, (gltf) => {
           .to('.hero-stats', { opacity: 1, y: 0, duration: 1, ease: "power4.out" }, "-=0.8")
           .to('.cta-group', { opacity: 1, y: 0, duration: 1, ease: "power4.out" }, "-=0.8");
 
-    // Immersive Scroll Transition (Fade out Robot)
+    // Immersive Scroll Transition (Zoom through Robot)
     gsap.to(model.scale, {
         scrollTrigger: {
             trigger: "#home",
@@ -120,7 +135,7 @@ loader.load(modelUrl, (gltf) => {
             end: "bottom center",
             scrub: 1,
         },
-        x: 0, y: 0, z: 0
+        x: 10, y: 10, z: 10
     });
 
     gsap.to(model.rotation, {
@@ -130,7 +145,7 @@ loader.load(modelUrl, (gltf) => {
             end: "bottom center",
             scrub: 1,
         },
-        y: Math.PI * 2
+        y: Math.PI * 1.35 - (Math.PI / 2) // Rotate face away slightly
     });
     
     gsap.to(circleMesh.scale, {
