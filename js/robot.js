@@ -624,7 +624,7 @@ export function initRobot({ scene, addUpdater, isMobile }) {
 
   function returnFromSection4() {
     gsap.to(robotGroup.position, {
-      y: 0.8,
+      y: 0,
       duration: 1,
       ease: "power2.inOut",
     });

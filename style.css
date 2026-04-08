@@ -136,21 +136,45 @@ main {
 }
 
 /* Left side content */
-.hero-left {
-  width: 30%;
-  max-width: 400px;
+.hero-top-center {
+  position: absolute;
+  top: 15vh;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  text-align: center;
+}
+
+.hero-bottom-center-content {
+  position: absolute;
+  bottom: 25vh;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 1.5rem;
+  width: 100%;
+  text-align: center;
+}
+
+.hero-scroll {
+  position: absolute;
+  bottom: 5vh;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
 
 .status-badges {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  display: none;
 }
 
 .badge { font-weight: bold; }
@@ -160,83 +184,55 @@ main {
 
 .hero-title {
   font-family: 'Rajdhani', sans-serif;
-  font-size: clamp(3rem, 6vw, 64px);
+  font-size: clamp(3rem, 8vw, 84px);
   font-weight: 700;
   line-height: 1;
   color: #fff;
   margin: 0;
-  text-shadow: none;
+  text-shadow: 0 0 20px rgba(0, 245, 255, 0.5);
 }
 
 .hero-subtitle {
   font-family: 'Exo 2', sans-serif;
   font-weight: 600;
-  font-size: 12px;
-  color: rgba(0, 245, 255, 0.6);
-  letter-spacing: 0.2em;
+  font-size: 14px;
+  color: rgba(0, 245, 255, 0.8);
+  letter-spacing: 0.3em;
   margin: 0;
 }
 
 /* Right side content */
-.hero-right {
-  width: 30%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  text-align: left;
-}
-
 .hero-tagline-heading {
   font-family: 'Rajdhani', sans-serif;
-  font-size: clamp(2rem, 4vw, 48px);
+  font-size: clamp(1.5rem, 3vw, 36px);
   font-weight: 700;
   line-height: 1.1;
   color: #fff;
-  text-shadow: 0 0 20px var(--cyan);
+  text-shadow: 0 0 15px var(--cyan);
   margin: 0;
 }
 
 .hero-tagline {
-  font-family: 'Exo 2', sans-serif;
-  font-size: 14px;
-  font-weight: 300;
-  line-height: 1.8;
-  color: rgba(255, 255, 255, 0.6);
-  margin: 0;
+  display: none;
 }
 
 .launch-btn {
-  align-self: flex-start;
-  padding: 14px 36px;
+  padding: 12px 36px;
   border: 2px solid var(--cyan);
   color: var(--cyan);
-  background: transparent;
+  background: rgba(0, 20, 30, 0.5);
   font-family: 'Rajdhani', sans-serif;
   font-weight: 700;
   font-size: 16px;
   letter-spacing: 0.15em;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 1rem;
 }
 
 .launch-btn:hover {
   background: var(--cyan);
   color: #000;
   box-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
-}
-
-/* Bottom Center Indicator */
-.hero-bottom-center {
-  position: absolute;
-  bottom: 5vh;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
 }
 
 .scroll-indicator {
