@@ -15,30 +15,88 @@ export function initRobot({ scene, addUpdater, isMobile }) {
 
   const headMat = new THREE.MeshStandardMaterial({
     color: "#1a1a2e",
-    metalness: 0.7,
-    roughness: 0.32,
+    metalness: 0.82,
+    roughness: 0.22,
     emissive: "#09101f",
     emissiveIntensity: 0.3,
     transparent: true,
     opacity: 1,
   });
 
-  const head = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), headMat);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 48), headMat);
   head.scale.set(1, 0.85, 1);
   robotGroup.add(head);
+
+  const cranialBand = new THREE.Mesh(
+    new THREE.TorusGeometry(0.78, 0.08, 24, 100),
+    new THREE.MeshStandardMaterial({
+      color: "#2a3042",
+      metalness: 0.9,
+      roughness: 0.2,
+      emissive: "#101626",
+      emissiveIntensity: 0.2,
+    })
+  );
+  cranialBand.rotation.x = Math.PI / 2;
+  cranialBand.position.set(0, 0.02, 0.05);
+  robotGroup.add(cranialBand);
 
   const faceplate = new THREE.Mesh(
     new THREE.BoxGeometry(1.08, 0.95, 0.12),
     new THREE.MeshStandardMaterial({
-      color: "#0d0d1a",
-      metalness: 0.55,
-      roughness: 0.45,
+      color: "#0b0f1b",
+      metalness: 0.7,
+      roughness: 0.28,
       emissive: "#090c1b",
       emissiveIntensity: 0.2,
     })
   );
   faceplate.position.z = 0.78;
+  faceplate.scale.set(0.98, 0.94, 1);
   robotGroup.add(faceplate);
+
+  const browPlate = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.08, 0.62, 8, 12),
+    new THREE.MeshStandardMaterial({
+      color: "#202a3a",
+      metalness: 0.88,
+      roughness: 0.24,
+      emissive: "#0a1120",
+      emissiveIntensity: 0.2,
+    })
+  );
+  browPlate.rotation.z = Math.PI / 2;
+  browPlate.position.set(0, 0.26, 0.89);
+  robotGroup.add(browPlate);
+
+  const noseBridge = new THREE.Mesh(
+    new THREE.BoxGeometry(0.14, 0.35, 0.08),
+    new THREE.MeshStandardMaterial({
+      color: "#1b2332",
+      metalness: 0.82,
+      roughness: 0.26,
+      emissive: "#0b1224",
+      emissiveIntensity: 0.2,
+    })
+  );
+  noseBridge.position.set(0, -0.04, 0.9);
+  robotGroup.add(noseBridge);
+
+  for (const side of [-1, 1]) {
+    const cheek = new THREE.Mesh(
+      new THREE.SphereGeometry(0.23, 24, 24),
+      new THREE.MeshStandardMaterial({
+        color: "#1d2435",
+        metalness: 0.8,
+        roughness: 0.28,
+        emissive: "#0b1325",
+        emissiveIntensity: 0.25,
+      })
+    );
+    cheek.scale.set(0.95, 0.72, 0.5);
+    cheek.position.set(side * 0.42, -0.3, 0.8);
+    robotGroup.add(cheek);
+  }
 
   const foreheadStripe = new THREE.Mesh(
     new THREE.BoxGeometry(0.7, 0.06, 0.03),
@@ -57,8 +115,8 @@ export function initRobot({ scene, addUpdater, isMobile }) {
     new THREE.BoxGeometry(0.88, 0.36, 0.48),
     new THREE.MeshStandardMaterial({
       color: "#121224",
-      metalness: 0.6,
-      roughness: 0.35,
+      metalness: 0.72,
+      roughness: 0.26,
       emissive: "#111a2b",
       emissiveIntensity: 0.35,
     })
@@ -67,6 +125,19 @@ export function initRobot({ scene, addUpdater, isMobile }) {
   jaw.scale.x = 1.05;
   jaw.scale.z = 0.88;
   robotGroup.add(jaw);
+
+  const mouthSlot = new THREE.Mesh(
+    new THREE.BoxGeometry(0.48, 0.05, 0.02),
+    new THREE.MeshStandardMaterial({
+      color: "#04121e",
+      emissive: CYAN,
+      emissiveIntensity: 0.8,
+      metalness: 0.1,
+      roughness: 0.6,
+    })
+  );
+  mouthSlot.position.set(0, -0.88, 0.63);
+  robotGroup.add(mouthSlot);
 
   const jawLineMat = new THREE.MeshStandardMaterial({
     color: "#031018",
@@ -125,7 +196,7 @@ export function initRobot({ scene, addUpdater, isMobile }) {
 
   for (const side of [-1, 1]) {
     const eye = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.1), eyeMaterial.clone());
-    eye.position.set(side * 0.27, 0.07, 0.86);
+    eye.position.set(side * 0.27, 0.07, 0.89);
     robotGroup.add(eye);
     eyeMeshes.push(eye);
 
@@ -133,13 +204,13 @@ export function initRobot({ scene, addUpdater, isMobile }) {
       new THREE.TorusGeometry(0.07, 0.007, 12, 20),
       new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.75 })
     );
-    ring.position.set(side * 0.27, 0.07, 0.865);
+    ring.position.set(side * 0.27, 0.07, 0.9);
     ring.rotation.x = Math.PI / 2;
     robotGroup.add(ring);
     ringMeshes.push(ring);
 
     const eyeLight = new THREE.RectAreaLight(0x00f5ff, 2.2, 0.22, 0.08);
-    eyeLight.position.set(side * 0.27, 0.07, 0.9);
+    eyeLight.position.set(side * 0.27, 0.07, 0.93);
     eyeLight.lookAt(side * 0.27, 0.07, 2.3);
     robotGroup.add(eyeLight);
     ringMeshes.push(eyeLight);
@@ -269,6 +340,7 @@ export function initRobot({ scene, addUpdater, isMobile }) {
     }
 
     foreheadStripe.material.emissiveIntensity = 0.8 + Math.sin(elapsed * 2.2) * 0.45;
+    mouthSlot.material.emissiveIntensity = 0.7 + Math.sin(elapsed * 2.7 + 0.3) * 0.25;
     jawLineL.material.emissiveIntensity = 0.8 + Math.sin(elapsed * 1.7) * 0.35;
     jawLineR.material.emissiveIntensity = 0.8 + Math.sin(elapsed * 1.7 + 0.5) * 0.35;
 
