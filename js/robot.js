@@ -519,7 +519,10 @@ export function initRobot({ scene, addUpdater, isMobile }) {
   // STATE & ANIMATIONS
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const state = {
+    baseX: 0,
     baseY: 0,
+    baseZ: 0,
+    fadeOpacity: 1,
     eyeColor: CYAN.clone(),
     mouseX: 0,
     mouseY: 0,
@@ -538,12 +541,43 @@ export function initRobot({ scene, addUpdater, isMobile }) {
     });
   }
 
-  function setBaseRotation(targetY) {
+  function setRotationProgress(progress) {
+    // Math mapping for smooth scrub
+    // Sec 1: p=0 -> 0°
+    // Sec 2: p=0.33 -> 90° (PI/2)
+    // Sec 3: p=0.66 -> 180° (PI)
+    // Sec 4: p=1.0 -> 270° (1.5 * PI)
+    const targetY = progress * 1.5 * Math.PI;
+    
+    // Add subtle X-axis tilt based on rotation progress to give depth
+    // e.g., slightly look up or down during transition
+    const tiltX = Math.sin(progress * Math.PI * 3) * 0.15; 
+    
     gsap.to(state, {
       baseY: targetY,
-      duration: 1.2,
-      ease: "power2.inOut",
+      baseX: tiltX,
+      duration: 0.5,
+      ease: "power1.out",
     });
+  }
+
+  function setFadeTransition(progress) {
+    // progress 0 to 1
+    // move back in Z, reduce opacity
+    const zOffset = -progress * 5.0; // move back 5 units
+    const targetOpacity = 1.0 - progress; // fade out
+
+    gsap.to(state, {
+      baseZ: zOffset,
+      fadeOpacity: targetOpacity,
+      duration: 0.5,
+      ease: "power1.out",
+    });
+  }
+
+  // Mark eye meshes so they can be handled separately from the main fade Traverse
+  for (const mesh of eyeMeshes) {
+      mesh.isEyePart = true;
   }
 
   function entryAnimation() {
@@ -656,23 +690,39 @@ export function initRobot({ scene, addUpdater, isMobile }) {
     state.mouseY = ny;
   }
 
+  // Pre-enable transparency for smooth fading
+  robotGroup.traverse((child) => {
+      if (child.isMesh && child.material && !child.isEyePart) {
+          child.material.transparent = true;
+      }
+  });
+
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // MAIN UPDATE LOOP
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   addUpdater((elapsed) => {
     // Breathing scale pulse
     const breathe = 1 + Math.sin(elapsed * 0.8) * 0.004;
+    const scaleFactor = isMobile ? 0.6 : 1;
     robotGroup.scale.set(
-      breathe * (isMobile ? 0.6 : 1),
-      breathe * (isMobile ? 0.6 : 1),
-      breathe * (isMobile ? 0.6 : 1)
+      breathe * scaleFactor * state.fadeOpacity,
+      breathe * scaleFactor * state.fadeOpacity,
+      breathe * scaleFactor * state.fadeOpacity
     );
+    robotGroup.position.z = state.baseZ;
+
+    // Apply fade to all meshes to disappear into the blur
+    robotGroup.traverse((child) => {
+        if (child.isMesh && child.material && !child.isEyePart) {
+            child.material.opacity = state.fadeOpacity;
+        }
+    });
 
     // Eye breathing animation
     const eyeBreath = Math.sin(elapsed * 1.8) * 0.12 + 0.82;
     for (let i = 0; i < eyeMeshes.length; i += 2) {
-      eyeMeshes[i].material.opacity = eyeBreath;
-      eyeMeshes[i].material.emissiveIntensity = eyeBreath * 0.4;
+      eyeMeshes[i].material.opacity = eyeBreath * state.fadeOpacity;
+      eyeMeshes[i].material.emissiveIntensity = eyeBreath * 0.4 * state.fadeOpacity;
     }
 
     // Update eye color
@@ -682,12 +732,12 @@ export function initRobot({ scene, addUpdater, isMobile }) {
 
     // RectAreaLight intensity breathing
     for (const light of rectAreaLights) {
-      light.intensity = 6 + Math.sin(elapsed * 1.8 + light.position.x * 3) * 2;
+      light.intensity = (6 + Math.sin(elapsed * 1.8 + light.position.x * 3) * 2) * state.fadeOpacity;
     }
 
     // Reactor pulsing (back panel)
-    reactor.material.emissiveIntensity = 0.6 + Math.sin(elapsed * 1.5) * 0.4;
-    reactorLight.intensity = 4 + Math.sin(elapsed * 1.5) * 1.5;
+    reactor.material.emissiveIntensity = (0.6 + Math.sin(elapsed * 1.5) * 0.4) * state.fadeOpacity;
+    reactorLight.intensity = (4 + Math.sin(elapsed * 1.5) * 1.5) * state.fadeOpacity;
 
     // Particle animation
     const p = particleGeometry.attributes.position.array;
@@ -710,7 +760,7 @@ export function initRobot({ scene, addUpdater, isMobile }) {
     particleGeometry.attributes.position.needsUpdate = true;
 
     // Robot parallax with mouse
-    robotGroup.rotation.x = state.mouseY * 0.08;
+    robotGroup.rotation.x = state.baseX + state.mouseY * 0.08;
     robotGroup.rotation.y = state.baseY + state.mouseX * 0.02;
   });
 
@@ -718,7 +768,8 @@ export function initRobot({ scene, addUpdater, isMobile }) {
     robotGroup,
     particles,
     setEyeColor,
-    setBaseRotation,
+    setRotationProgress,
+    setFadeTransition,
     entryAnimation,
     exitToSection4,
     returnFromSection4,

@@ -17,47 +17,59 @@ export function initScroll({ robot }) {
 
   let phase = 1;
 
+  // Track rotation through the 4 sections
   ScrollTrigger.create({
     trigger: ".rotation-track",
     start: "top top",
     end: "bottom bottom",
     pin: false,
-    scrub: true,
+    scrub: 0.1,  // smooth slightly
     onUpdate: (self) => {
       const p = self.progress;
 
-      if (p < 0.33 && phase !== 1) {
+      // Update rotation logically continuously mapped to progress
+      robot.setRotationProgress(p);
+
+      // Eye colors based on quadrant
+      if (p < 0.25 && phase !== 1) {
         phase = 1;
-        robot.setBaseRotation(0);
         robot.setEyeColor(robot.eyePresets.CYAN);
-      } else if (p >= 0.33 && p < 0.66 && phase !== 2) {
+      } else if (p >= 0.25 && p < 0.5 && phase !== 2) {
         phase = 2;
-        robot.setBaseRotation(Math.PI / 2);
         robot.setEyeColor(robot.eyePresets.BLUE);
-      } else if (p >= 0.66 && phase !== 3) {
+      } else if (p >= 0.5 && p < 0.75 && phase !== 3) {
         phase = 3;
-        robot.setBaseRotation(Math.PI);
+        robot.setEyeColor(robot.eyePresets.AMBER);
+      } else if (p >= 0.75 && phase !== 4) {
+        phase = 4;
+        // Keep amber or switch to another? Let's use WHITE/AMBER
         robot.setEyeColor(robot.eyePresets.AMBER);
       }
     },
   });
 
+  // Track the fade backward transition in Themes section
   ScrollTrigger.create({
-    trigger: "#section-4",
-    start: "top 65%",
+    trigger: "#section-themes",
+    start: "top 60%", // start transition early to feel smooth
+    end: "top 10%",
+    scrub: true,
+    onUpdate: (self) => {
+      robot.setFadeTransition(self.progress);
+    },
     onEnter: () => {
-      robot.exitToSection4();
       robot.setMode("nebula");
     },
     onLeaveBack: () => {
-      robot.returnFromSection4();
       robot.setMode("stars");
     },
   });
 
+  // Themes Assembly logic will be handled mostly in sections.js / CSS, 
+  // but we can add mode switch here
   ScrollTrigger.create({
-    trigger: "#section-5",
-    start: "top 70%",
+    trigger: "#section-footer",
+    start: "top 80%",
     onEnter: () => robot.setMode("warp"),
     onLeaveBack: () => robot.setMode("nebula"),
   });
